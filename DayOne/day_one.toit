@@ -11,6 +11,14 @@
  |_____/ \__,_|\__, |  |_| (_)    |_|_|  \___|_.__/ \__,_|\___|_| |_|\___|\__(_) (_)
                 __/ |                                                               
                |___/                                                                
+
+Isaiah 9:6
+  For to us a child is born,
+      to us a son is given;
+  and the government shall be upon[a] his shoulder,
+      and his name shall be called[b]
+  Wonderful Counselor, Mighty God,
+      Everlasting Father, Prince of Peace.
 */
 
 import .input
