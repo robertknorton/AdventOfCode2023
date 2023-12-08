@@ -76,20 +76,20 @@ class PartNumber:
   is-valid := "unknown"
 
   stringify -> string:
-    return "Line: $line, Index: $index, Length: $length, Value: $value, is-valid: $is-valid"
+    return "\nLine: $line, Index: $index, Length: $length, Value: $value, is-valid: $is-valid"
   constructor .line .index .length .value:
     
 
 numbers := [0,1,2,3,4,5,6,7,8,9]
 symbols := ["@","#","%","&","*","-","=","+","/"]
+list-of-part-numbers := []
 
 task-part-one:  
   print "---------PART One---------"
-  list-of-part-numbers := []
   list-of-schematic-lines := []
   input-string.split "\n": | line |
     list-of-schematic-lines.add (line)
-  print list-of-schematic-lines
+  //print list-of-schematic-lines
 
   // Iterate Lines in schematic
   for line := 0; line < list-of-schematic-lines.size; line++:
@@ -213,7 +213,8 @@ class GearRatio:
   part-numbers /List? := ?
 
   stringify -> string:
-    return "Line: $line, Index: $index, Ratio: $ratio, Part-numbers: $part-numbers \n"
+    return "Line: $line, Index: $index, Ratio: $ratio, Part-numbers: $part-numbers"
+    
   
   constructor .line .index .part-numbers:
 
@@ -222,11 +223,14 @@ task-part-two:
   print "---------PART Two---------"
   list-of-gear-ratios := []
   list-of-schematic-lines := []
+  symbol-gear-ratio := "*"
+
+  // Read lines from schematic
   input-string.split "\n": | line |
     list-of-schematic-lines.add (line)
-  print list-of-schematic-lines
+    // print list-of-schematic-lines
 
-  // Iterate Lines in schematic
+  // Iterate Lines in schematic to find all occurences of an asterisk
   for line := 0; line < list-of-schematic-lines.size; line++:
     str-line := list-of-schematic-lines[line]
     // last-cursor-was-number := false
@@ -236,73 +240,60 @@ task-part-two:
       str-char := "$(%c str-line[cursor])"
       if str-char == "*":
         list-of-gear-ratios.add (GearRatio line cursor [])
-        // Now we need to check around the "*" for numbers
-        // print part-number.stringify
-        // Check left and right numbers
-        // Handle left char
-        found-left-number := false
-        exception := catch:
-          left-char := list-of-schematic-lines[line][cursor - 1]
-          is-number := false
-          numbers.do: | number |
-            if (int.parse left-char) == number:
-              is-number = true
-          if is-number:
-            left-number := left-char
-            numbers-left := true
-            while numbers-left:
-              cursor = cursor - 1
-              exception = catch:
-                left-char = list-of-schematic-lines[line][cursor]
-              if exception:
-                print "Left char not found"
-              is-number = false
-              numbers.do: | number |
-                if (int.parse left-char) == number:
-                  is-number = true
-              if is-number:
-                left-number = [left-char, left-number].join ""
-              else:
-                list-of-gear-ratios.last.part-numbers.add (PartNumber line cursor left-number.size left-number) 
-                numbers-left = false
-        //   surrounding-characters.add "$(%c left-char)"
-          found-left-number = true
-          
-        if exception:
-          print "Left char not found"
 
-        // Handle right char
-        found-right-number := false
-        exception = catch:
-          right-char := list-of-schematic-lines[line][cursor + 1]
-          is-number := false
-          numbers.do: | number |
-            if (int.parse right-char) == number:
-              is-number = true
-          if is-number:
-            right-number := right-char
-            numbers-right := true
-            while numbers-right:
-              cursor = cursor + 1
-              exception = catch: 
-                right-char = list-of-schematic-lines[line][cursor]
-              if exception:
-                print "Right char not found"
-              is-number = false
-              numbers.do: | number |
-                if (int.parse right-char) == number:
-                  is-number = true
-              if is-number:
-                right-number = [right-number, right-char].join ""
-              else:
-                list-of-gear-ratios.last.part-numbers.add (PartNumber line cursor right-number.size right-number) 
-                numbers-right = false
-            
-          found-right-number = true
-        if exception:
-          print "Right char not found"
+  // Now we need to check around the numbers for symbols
+  list-of-part-numbers.do: | part-number |
+    // print part-number.stringify
+    surrounding-asterisks := []
+    // Handle left char
+    exception := catch:
+      left-char := "$(%c list-of-schematic-lines[part-number.line][part-number.index - 1])"
+      if left-char == symbol-gear-ratio:
+        surrounding-asterisks.add [part-number.line, part-number.index - 1]
+    if exception:
+    //   print "Left char not found"
+    // Handle right char
+    exception = catch:
+      right-char := "$(%c list-of-schematic-lines[part-number.line][part-number.index + part-number.length])"
+      if right-char == symbol-gear-ratio:
+        surrounding-asterisks.add [part-number.line, part-number.index + part-number.length]
+    if exception:
+    //   print "Right char not found"
+    
+    // Handle chars above
+    for index := -1; index < (part-number.length + 1); index++:
+      exception = catch:
+        above-char := "$(%c list-of-schematic-lines[part-number.line - 1][part-number.index + index])"
+        if above-char == symbol-gear-ratio:
+          surrounding-asterisks.add [part-number.line - 1, part-number.index + index]
+      if exception:
+        // print "Above char not found"
+    
+    // Handle chars below
+    for index := -1; index < (part-number.length + 1); index++:
+      exception = catch:
+        below-char := "$(%c list-of-schematic-lines[part-number.line + 1][part-number.index + index])"
+        if below-char == symbol-gear-ratio:
+          surrounding-asterisks.add [(part-number.line + 1), (part-number.index + index)]
+      if exception:
+        // print "Below char not found"
+    
+    // Iterate through list of gear ratios and assign the part number
+    list-of-gear-ratios.do: | gear-ratio |
+      surrounding-asterisks.do: | asterisk |
+        if asterisk[0] == gear-ratio.line and asterisk[1] == gear-ratio.index:
+          gear-ratio.part-numbers.add part-number.value
+  
+  // Compute the ratio
+  list-of-gear-ratios.do: | gear-ratio |
+    if gear-ratio.part-numbers.size == 2:
+      gear-ratio.ratio = (int.parse gear-ratio.part-numbers[0]) * (int.parse gear-ratio.part-numbers[1])
 
-  print list-of-gear-ratios
+  // Sum the ratios
+  list-of-gear-ratios.do: | gear-ratio |
+    if gear-ratio.ratio != null:
+      task-part-two-result-sum += gear-ratio.ratio
+
 /*
   _____                 _ _       
  |  __ \               | | |      
