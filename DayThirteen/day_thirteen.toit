@@ -153,6 +153,8 @@ task-part-one:
             num-rows-above := pattern-row
             print "\tNumber of Rows Above: " + num-rows-above.stringify
             sum-of-horizontal-reflections += (num-rows-above * 100)
+            // Only find one valid reflection
+            break
           else:
             print "\tNot a Perfect Horizontal Reflection."
 
@@ -219,6 +221,8 @@ task-part-one:
                 num-columns-left := pattern-column
                 print "\tNumber of Columns Left: " + num-columns-left.stringify
                 sum-of-vertical-reflections += (num-columns-left)
+                // Only find one valid reflection
+                break
               else:
                 print "\tNot a Perfect Vertical Reflection."
 
@@ -239,12 +243,213 @@ task-part-one:
  | |  | (_| | |  | |_     | |\ V  V / (_) |
  |_|   \__,_|_|   \__|    |_| \_/\_/ \___/ 
                                            
-                                           
+You resume walking through the valley of mirrors and - SMACK! - run directly into one. Hopefully nobody was watching, because that must have been pretty embarrassing.
+
+Upon closer inspection, you discover that every mirror has exactly one smudge: exactly one . or # should be the opposite type.
+
+In each pattern, you'll need to locate and fix the smudge that causes a different reflection line to be valid. (The old reflection line won't necessarily continue being valid after the smudge is fixed.)
+
+Here's the above example again:
+
+#.##..##.
+..#.##.#.
+##......#
+##......#
+..#.##.#.
+..##..##.
+#.#.##.#.
+
+#...##..#
+#....#..#
+..##..###
+#####.##.
+#####.##.
+..##..###
+#....#..#
+The first pattern's smudge is in the top-left corner. If the top-left # were instead ., it would have a different, horizontal line of reflection:
+
+1 ..##..##. 1
+2 ..#.##.#. 2
+3v##......#v3
+4^##......#^4
+5 ..#.##.#. 5
+6 ..##..##. 6
+7 #.#.##.#. 7
+With the smudge in the top-left corner repaired, a new horizontal line of reflection between rows 3 and 4 now exists. Row 7 has no corresponding reflected row and can be ignored, but every other row matches exactly: row 1 matches row 6, row 2 matches row 5, and row 3 matches row 4.
+
+In the second pattern, the smudge can be fixed by changing the fifth symbol on row 2 from . to #:
+
+1v#...##..#v1
+2^#...##..#^2
+3 ..##..### 3
+4 #####.##. 4
+5 #####.##. 5
+6 ..##..### 6
+7 #....#..# 7
+Now, the pattern has a different horizontal line of reflection between rows 1 and 2.
+
+Summarize your notes as before, but instead use the new different reflection lines. In this example, the first pattern's new horizontal line has 3 rows above it and the second pattern's new horizontal line has 1 row above it, summarizing to the value 400.
+
+In each pattern, fix the smudge and find the different line of reflection. What number do you get after summarizing the new reflection line in each pattern in your notes?                                      
 
 */
+
+parse_input_string input:
+  list-of-reflection-patterns := input.split "\n\n"
+  list-of-lines-in-pattern := []
+  list-of-reflection-patterns.do: | line |
+    list-of-lines-in-pattern.add (line.split "\n")
+  return list-of-lines-in-pattern
+  // Print our parsed patterns for debugging
+//   for x := 0 ; x < list-of-lines-in-pattern.size; x++:
+//     print "Pattern " + x.stringify
+//     for y := 0 ; y < list-of-lines-in-pattern[x].size; y++:
+//       print "\tLine " + y.stringify + ": " + list-of-lines-in-pattern[x][y].stringify
+  
+compute_score pattern:
+  result := null
+  hrz-reflec-line-index := find_hrz_reflec_index pattern
+
+  if hrz-reflec-line-index == null:
+    vrt_reflec_line_index := find_vrt_reflec_index pattern
+    // if vrt_reflec_line_index == null:
+    //   result = 0
+    // else:
+    result = vrt-reflec-line-index + 1
+    print "Vertical reflection line " + vrt-reflec-line-index.stringify + ": " + result.stringify
+    return result
+    
+  if hrz-reflec-line-index == null:
+    result = 0
+  else:
+    result = (hrz-reflec-line-index + 1) * 100
+    print "Horizontal reflection line " + hrz-reflec-line-index.stringify + ": " + result.stringify
+  return result
+
+find_hrz_reflec_index pattern:
+  reflection-index := null
+  for line := 0; line < (pattern.size - 1); line++:
+    if is_hrz_reflec_line line (line + 1) pattern true:
+      reflection-index = line
+      break
+  return reflection-index
+
+find_vrt_reflec_index pattern:
+  reflection-index := null
+  for line := 0; line < (pattern[0].size - 1); line++:
+    if is_vrt_reflec_line line (line + 1) pattern true:
+      reflection-index = line
+      break
+  return reflection-index
+
+is_hrz_reflec_line index1 index2 pattern is-smudge-avaiable:
+  if index1 < 0:
+    if is-smudge-avaiable:
+      // Require exactly one smudge
+      return false
+    else:
+      return true
+  if index2 > (pattern.size - 1):
+    if is-smudge-avaiable:
+      // Require exactly one smudge
+      return false
+    else:
+      return true
+  
+  row1 := null
+  row2 := null
+  number-of-differences := 0
+  exception := catch:
+    row1 = pattern[index1]
+    row2 = pattern[index2]
+    number-of-differences = compute_number_of_different_chars row1 row2
+  if exception:
+    print "\t\t\tFailed to get next row"
+    return false
+  
+  print "\tRow " + index1.stringify + ": " + row1.stringify
+  print "\tRow " + index2.stringify + ": " + row2.stringify
+  print "\tNumber of differences: " + number-of-differences.stringify
+
+  if number-of-differences > 1:
+    return false
+  else if number-of-differences == 1:
+    if is-smudge-avaiable:
+      return is-hrz-reflec-line (index1 - 1) (index2 + 1) pattern false
+    else:
+      return false
+  return is-hrz-reflec-line (index1 - 1) (index2 + 1) pattern is-smudge-avaiable
+
+is_vrt_reflec_line index1 index2 pattern is-smudge-avaiable:
+  if index1 < 0:
+    if is-smudge-avaiable:
+      // Require exactly one smudge
+      return false
+    else:
+      return true
+  if index2 > (pattern[0].size - 1):
+    if is-smudge-avaiable:
+      // Require exactly one smudge
+      return false
+    else:
+      return true
+  
+  column1 := []
+  column2 := []
+  number-of-differences := 0
+  exception := catch:
+    pattern.do: | line |
+      column1.add ("$(%c line[index1])")
+      column2.add ("$(%c line[index2])")
+    // column1 = pattern[index1].split ("")
+    // column2 = pattern[index2].split ("")
+    number-of-differences = compute_number_of_different_chars column1 column2
+  if exception:
+    print "\t\t\tFailed to get next row"
+    return false
+
+  print "\tColumn " + index1.stringify + ": " + column1.stringify
+  print "\tColumn " + index2.stringify + ": " + column2.stringify
+  print "\tNumber of differences: " + number-of-differences.stringify
+
+  if number-of-differences > 1:
+    print "\t\t\tToo many differences"
+    return false
+  else if number-of-differences == 1:
+    print "\t\t\tOne difference"
+    if is-smudge-avaiable:
+      return is-vrt-reflec-line (index1 - 1) (index2 + 1) pattern false
+    else:
+      return false
+  return is-vrt-reflec-line (index1 - 1) (index2 + 1) pattern is-smudge-avaiable
+  
+compute_number_of_different_chars list1 list2:
+  if list1.size != list2.size:
+    // Lists must be the same size
+    return null
+  // Count the differences
+  count-of-differences := 0
+  for i := 0; i < list1.size; i++:
+    if list1[i] != list2[i]:
+      count-of-differences += 1
+  return count-of-differences
+
 task-part-two:
   print "---------PART Two---------"
-  
+  sum-of-reflection-notes := 0
+  sum-of-horizontal-reflections := 0
+  sum-of-vertical-reflections := 0
+
+  list-of-patterns :=parse-input-string input-string
+
+  for x := 0; x < list-of-patterns.size; x++:
+    pattern := list-of-patterns[x]
+    print "Pattern " + x.stringify + ": "
+    pattern.do: | line |
+      print "\t" + line.stringify
+    sum-of-reflection-notes += compute_score pattern
+    
+  task-part-two-result-sum = sum-of-reflection-notes
 
 /*
   _____                 _ _       
@@ -258,5 +463,5 @@ task-part-two:
 task-results:
   print "-------------------------------------------------------"
   print "Part One - Final Result: " + "$task-part-one-result-sum"
-//   print "Part Two - Final Result: " + "$task-part-two-result-sum"
+  print "Part Two - Final Result: " + "$task-part-two-result-sum"
   print "-------------------------------------------------------"
