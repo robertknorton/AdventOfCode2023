@@ -154,8 +154,40 @@ Process all of the original and copied scratchcards until no more scratchcards a
 */
 task-part-two:
   print "---------PART Two---------"
-  
+//   list-of-scratch-cards := parse-input-string example-input-string-part2
+  list-of-scratch-cards := parse-input-string input-string-part2
+  original-number-of-scratch-cards := list-of-scratch-cards.size
+//   list-of-won-cards := []
+  for card-index := 0; card-index < list-of-scratch-cards.size; card-index++:
+    // print "Card: " + list-of-scratch-cards[card-index].number.stringify
+    card := list-of-scratch-cards[card-index]
+    card.points = (matching_numbers_in_card card)
+    // Count original cards once
+    if card-index < original-number-of-scratch-cards:
+      task-part-two-result-sum += 1
+    if card.points > 0:
+    //   print "\tMatches found: " + card.points.stringify
+      for x := 0; x < card.points; x++:
+        new-index := card.number + x
+        // if new-index < original-number-of-scratch-cards:
+        new-card := list-of-scratch-cards[new-index]
+        //   task-part-two-result-sum += matching_numbers_in_card new-card
+        // print "\t\tAppending card: " + new-card.number.stringify
+        // Add one for new card
+        task-part-two-result-sum += 1
+        new-card.points = 0
+        list-of-scratch-cards.add new-card
+    else: 
+        // print "\n\tNo points so add no card"
+    if task-part-two-result-sum % 100000 == 0:
+      print "\tTask Part Two Result Sum: " + task-part-two-result-sum.stringify
 
+matching_numbers_in_card card:
+  matches := 0
+  card.winning-numbers.do: | winning-number |
+    if card.card-numbers.contains winning-number:
+      matches += 1
+  return matches
 /*
   _____                 _ _       
  |  __ \               | | |      
